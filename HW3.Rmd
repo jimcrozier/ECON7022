@@ -1,0 +1,77 @@
+---
+title: "HW3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Kreuger Paper
+
+1. STAR stands for Student Teacher Achievement Ratio
+2. The three classes of the experiment were small classes (11-20 students),
+regular size classes (15-30 students), and regular sized classes with teaching
+assistants.
+3. Project STAR was was a study of 11,600 K-4 grade students that evaluated the causal 
+effects of classroom size on student outcomes. Through a process of randomization to 
+control for selection effects, the program assigned students to the three class room 
+sizes mentioned above, and then evaluated the academic outcomes of the students. 
+4. As always in applied research we are concerned with correlation vs causation. Correlation can show the replationship between two variables, but can often be misleading because the relationship is actually masking another reltationship that is not being accounted for. There are 
+many reason why students academic outcomes vary, and many reason why classroom size may vary. 
+A study that evaluated a non-randomized sample of outcomes and class size could certainly show
+the correlation between the two variables, but without the randomization we would be left with
+the qeuestion of why the correlation exist. Most probably effects outside of classroom size 
+would be confounding the correlation. For instance, if we found a positive effect of lower 
+class size we would probably be worried that some other variable that could effect other things 
+that could impact students outcome, most obviously family wealth, which were actually causing the effect that the correlation is attributing to the lower class size. In general, we would refer to this as an omitted variable problem.
+5. The random assignment spreads out the variation of the population in order to avoid pooling of characteristics that are endogenous to the outcome. For instance if the schools had not randomly assigned the classroom size there is a good chance that more active parents would have advocated for smaller classroom size, and these parents might also have attributes that are correlated with having children that have higher outcomes such as highering tutors, etc. By randomly assigning we are attempting to spread out those students that have positive error, as well as negative error, accross the sample. Once we have randomized we expect that the average effect should be reflective of the true effect (or at least as close as we are able to get).
+6. These tables show the summary statistics because we expect the randomization to make the groups very similar. If there were big differences in the groups we would question the true randomization process. 
+
+```{r}
+
+library(plotly)
+
+sim = function(B0 = 0.75,B1 = 5,n_reps = 40,
+               n_samp = 500,n_beta2 = 21,beta2 = seq(-1,1,.1),
+               x_correlation=0.6, plotthis = TRUE) {
+
+  out = list()
+  runi = 0;for ( i in 1:n_reps){
+    for(j in 1:n_beta2){
+      runi = runi + 1
+      z = rnorm(n_samp, 0,1)
+      u = rnorm(n_samp, 0,1)
+      e = rnorm(n_samp, 0,1)
+      x = 0.8*z + 0.1*u
+      epsilon = beta2[j]*u + e
+      y = B0 + B1*x + epsilon 
+      ols = lm(y~x)
+      out[[runi]] = data.frame(beta2 = beta2[j], beta_hat = coef(ols)[[2]])
+    }
+  }
+    out = do.call("rbind", out)
+  if(plotthis){
+    fig = plot_ly(out, x= ~beta2, y=~beta_hat, type = "scatter", name = "beta hat")%>%
+      add_segments(x = -1, xend = 1, y = 5, yend = 5, name = "true beta") %>%
+      layout(title = paste0("simulation of endogeneity:
+         y = b0 + b1X + b2u + e 
+         where X = 0.8z + ",x_correlation,"*u, and e,z,u ~norm(0,1) "))
+    
+    fig
+  }
+
+  return(list(data = out, fig= fig))
+}
+
+dat = sim(0.6)
+dat$fig
+dat = sim(0.1)
+dat$fig
+
+
+```
+
+
+
+
